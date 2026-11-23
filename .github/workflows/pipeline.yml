@@ -1,12 +1,15 @@
 name: Tourism MLOps CI/CD Pipeline
+
 on:
   push:
     branches: [main]
     paths-ignore:
       - 'tourism_project/deployment/*.joblib'
   workflow_dispatch:
+
 permissions:
   contents: write
+
 jobs:
   register-dataset:
     runs-on: ubuntu-latest
@@ -17,6 +20,7 @@ jobs:
           python-version: '3.11'
       - run: pip install -r tourism_project/requirements.txt
       - run: python tourism_project/model_building/data_register.py
+
   data-prep:
     needs: register-dataset
     runs-on: ubuntu-latest
@@ -35,6 +39,7 @@ jobs:
             Xtest.csv
             ytrain.csv
             ytest.csv
+
   model-training:
     needs: data-prep
     runs-on: ubuntu-latest
@@ -47,7 +52,13 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: tourism-data-splits
-      - run: python tourism_project/model_building/train.py
+
+      # Updated MLflow configuration
+      - name: Train Tourism Model
+        env:
+          MLFLOW_TRACKING_URI: sqlite:///mlflow.db
+        run: python tourism_project/model_building/train.py
+
       - name: Commit trained model
         run: |
           git config user.name 'github-actions[bot]'
