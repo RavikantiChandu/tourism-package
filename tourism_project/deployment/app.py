@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 st.title("Tourism Package Purchase Prediction")
+st.caption("Pre-contact customer scoring; historical package purchase proxy for wellness demand.")
 model_path = Path(__file__).with_name("tourism_purchase_model.joblib")
 if not model_path.exists():
     st.error("Trained model not found. Run the GitHub Actions pipeline first.")
@@ -28,12 +29,12 @@ for name in features:
     if name in choices:
         values[name] = st.selectbox(name, choices[name])
     elif name in num_columns:
-        values[name] = st.number_input(name, value=0.0, step=1.0)
+        values[name] = st.number_input(name, min_value=0.0, value=1.0 if name == "NumberOfPersonVisiting" else 0.0, step=1.0)
     else:
         values[name] = st.text_input(name, value="")
 if "IncomePerVisitor" in features:
     visitors = values.get("NumberOfPersonVisiting", 0)
-    values["IncomePerVisitor"] = values.get("MonthlyIncome", 0) / visitors if visitors else None
+    values["IncomePerVisitor"] = values.get("MonthlyIncome", 0) / visitors if visitors else float("nan")
 if st.button("Predict Purchase"):
     sample = pd.DataFrame([{name: values.get(name) for name in features}])
     probability = model.predict_proba(sample)[0, 1]
